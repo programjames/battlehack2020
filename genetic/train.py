@@ -15,6 +15,8 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
+keys = ["advanced", "back", "chains", "count", "horizontal", "promoted", "threats", "vertical", "wedges"]
+
 LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
     epoch = 0
@@ -23,7 +25,6 @@ if  LOAD_FROM_FILE:
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
-    keys = ["advanced", "back", "chains", "count", "horizontal", "promoted", "threats", "vertical", "wedges"]
     weightss = [random_weights(keys) for i in range(32)]
     epoch = 0
 
@@ -35,7 +36,13 @@ while epoch < 1000:
         for c in range(5):
             j = i ^ (1 << c)
             robot2 = robots[j]
-            winner = run_game(robot1.bot_directory, robot2.bot_directory, board_size=10, max_rounds=200, debug=False)
+            winner = run_game(
+                robot1.bot_directory,
+                robot2.bot_directory,
+                board_size=10,
+                max_rounds=200,
+                debug=False
+                )
             if winner == 0:
                 wins[i] += 1
             else:
@@ -49,7 +56,7 @@ while epoch < 1000:
         f.write(json.dumps(weightss))
 
     new_weightss = list(weightss[:4])
-    for i in range(28):
+    for i in range(24):
         new_weightss.append(
             mutate(
                 cross(
@@ -57,6 +64,8 @@ while epoch < 1000:
                     random.choice(weightss[:8]))
                 )
             )
+    for i in range(4):
+        new_weightss.append(random_weights(keys))
     weightss = new_weightss
 
     with open(f"saved_weights/epoch{epoch}.json", "w") as f:
