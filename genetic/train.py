@@ -1,6 +1,7 @@
 import random
 import json
 import os
+import time
 
 from robot import Robot
 from run import run_game
@@ -22,34 +23,46 @@ if  LOAD_FROM_FILE:
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
-    keys = ["advanced", "chains", "count", "horizontal", "threats", "vertical", "wedges"]
-    weightss = [random_weights(keys) for i in range(5)]
+    keys = ["advanced", "back", "chains", "count", "horizontal", "promoted", "threats", "vertical", "wedges"]
+    weightss = [random_weights(keys) for i in range(32)]
     epoch = 0
 
-while epoch < 100:
+while epoch < 1000:
+    start = time.time()
     robots = [Robot(epoch, i, weights) for i, weights in enumerate(weightss)]
     wins = [0 for i in range(len(weightss))]
     for i, robot1 in enumerate(robots):
-        for j, robot2 in enumerate(robots[:i]):
-            winner = run_game(robot1.bot_directory, robot2.bot_directory)
+        for c in range(5):
+            j = i ^ (1 << c)
+            robot2 = robots[j]
+            winner = run_game(robot1.bot_directory, robot2.bot_directory, board_size=10, max_rounds=200, debug=False)
             if winner == 0:
                 wins[i] += 1
             else:
                 wins[j] += 1
             print(".", end="", flush=True)
+            
     print()
     wins, weightss = zip(*sorted(zip(wins, weightss), key=lambda x:x[0], reverse=True))
 
     with open(f"saved_weights/epoch{epoch}.json", "w") as f:
         f.write(json.dumps(weightss))
 
-    new_weightss = [weightss[0]]
-    for i in range(4):
-        new_weightss.append(mutate(cross(random.choice(weightss[:3]), random.choice(weightss[:3]))))
+    new_weightss = list(weightss[:4])
+    for i in range(28):
+        new_weightss.append(
+            mutate(
+                cross(
+                    random.choice(weightss[:8]),
+                    random.choice(weightss[:8]))
+                )
+            )
     weightss = new_weightss
 
     with open(f"saved_weights/epoch{epoch}.json", "w") as f:
         json.dump(weightss, f)
-     
+
+    end = time.time()
     print(f"Epoch {epoch} completed!")
+    print(f"Time for epoch = {end - start}")
     epoch += 1
