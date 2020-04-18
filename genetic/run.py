@@ -27,6 +27,7 @@ if __name__ == "__main__":
     r2 = Robot("test", "2", weights2)
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
+
     game = Game([c1, c2], board_size=16, max_rounds=250, debug=False, seed=None)
     start = time.time()
     while game.running:

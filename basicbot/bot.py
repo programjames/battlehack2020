@@ -7,12 +7,14 @@ def dlog(str):
         log(str)
 
 ADVANCED_MULTIPLIER = 1
-CHAINS_MULTIPLIER = 1
-COUNT_MULTIPLIER = 1
-HORIZONTAL_MULTIPLIER = 1
-THREATS_MULTIPLIER = 1
-VERTICAL_MULTIPLIER = 1
-WEDGES_MULTIPLIER = 1
+BACK_MULTIPLIER = -4
+CHAINS_MULTIPLIER = 2
+COUNT_MULTIPLIER = 5
+HORIZONTAL_MULTIPLIER = 2
+THREATS_MULTIPLIER = -7
+VERTICAL_MULTIPLIER = -3
+PROMOTED_MULTIPLIER = 10000
+WEDGES_MULTIPLIER = -1
 
 
 def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
@@ -40,6 +42,12 @@ def advanced(board):
                 h -= 4 - y
     return h
 
+def back(row, team, board_size):
+    if team == Team.WHITE:
+        return 1 if row == 0 else 0
+    else:
+        return 1 if row == board_size - 1 else 0
+
 def chains(board):
     # +1 for each pawn in one of our chains, -1 for each pawn in enemy chain
     h = 0
@@ -64,7 +72,7 @@ def count(board):
             h += board[y][x]
     return h
 
-def horizontal(h, board):
+def horizontal(board):
     # +1 for each pair of adjacent pawns horizontally, -1 for enemy pawns in such a configuration
     h = 0
     for x in range(4):
@@ -75,27 +83,33 @@ def horizontal(h, board):
                 h -= 1
     return h
 
+def promoted(row, team, board_size):
+    if team == Team.WHITE:
+        return 1 if row == board_size - 1 else 0
+    else:
+        return 1 if row == 0 else 0
+
 def threats(board):
-    # -1 for each of our pawns that can get captured
+    # +1 for each of our pawns that can get captured
     # Note: double threats counted twice
     h = 0
     for x in range(4):
         for y in range(4):
             if board[y][x] == 1 and board[y+1][x+1] == -1:
-                h -= 1
+                h += 1
             if board[y][x+1] == 1 and board[y+1][x] == -1:
-                h -= 1
+                h += 1
     return h
 
 def vertical(board):
-    # -1 for each of our pawns adjacent vertically, +1 for enemy pawns in such a configuration
+    # +1 for each of our pawns adjacent vertically, -1 for enemy pawns in such a configuration
     h = 0
     for x in range(5):
         for y in range(4):
             if board[y][x] == board[y+1][x] == 1:
-                h -= 1
-            if board[y][x] == board[y+1][x] == -1:
                 h += 1
+            if board[y][x] == board[y+1][x] == -1:
+                h -= 1
     return h
 
 def wedges(board):
@@ -109,15 +123,17 @@ def wedges(board):
                 h -= 1
     return h
 
-def heuristic(board):
+def heuristic(board, row, team, board_size):
     # Heuristic for how good a position is
     
     # +1 for each of our pieces, -1 for each of enemy pieces
     h = 0
     h += ADVANCED_MULTIPLIER * advanced(board)
+    h += BACK_MULTIPLIER * back(row, team, board_size)
     h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
+    h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
     h += THREATS_MULTIPLIER * threats(board)
     h += VERTICAL_MULTIPLIER * vertical(board)
     h += WEDGES_MULTIPLIER * wedges(board)
@@ -132,6 +148,11 @@ def pawn_turn():
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
     row, col = get_location()
     
+    if team == Team.WHITE and row == board_size - 1:
+        return
+    if team == Team.BLACK and row == 0:
+        return
+    
     board = [[check_space_wrapper(row+y, col+x, board_size, team, opp_team) for x in range(-2, 3)] for y in range(-2, 3)]
 
     if team == Team.WHITE:
@@ -140,27 +161,28 @@ def pawn_turn():
         forward = -1
         board = board[::-1]
     
-    states = {"sit": board}
+    states = {"sit": (board, row)}
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
-        states["forward"] = new_state
+        states["forward"] = (new_state, row + forward)
     if board[3][1] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["left"] = new_state
+        states["left"] = (new_state, row + forward)
     if board[3][3] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["right"] = new_state
+        states["right"] = (new_state, row + forward)
 
     best_move = None
     best_h = -100000
-    for move, board in states.items():
-        h = heuristic(board)
+    for move in states:
+        state_board, state_row = states[move]
+        h = heuristic(state_board, state_row, team, board_size)
         if best_move == None or h > best_h:
             best_move = move
             best_h = h
