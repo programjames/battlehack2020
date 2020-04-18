@@ -1,0 +1,3 @@
+[submodule "battlehack20-minimal"]
+	path = battlehack20-minimal
+	url = https://github.com/programjames/battlehack2020
