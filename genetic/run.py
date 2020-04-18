@@ -28,7 +28,7 @@ if __name__ == "__main__":
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
-    game = Game([c1, c2], board_size=16, max_rounds=250, debug=False, seed=None)
+    game = Game([c1, c2], board_size=16, max_rounds=1000, debug=False, seed=None)
     start = time.time()
     while game.running:
         game.turn()
@@ -36,4 +36,4 @@ if __name__ == "__main__":
     print(f"Winner is {game.winner}")
     print(f"Time taken = {end - start}")
     viewer = FancyViewer(game.board_size, game.board_states, window_size=800)
-    viewer.play(delay=0.5)
+    viewer.play(delay=0.1)

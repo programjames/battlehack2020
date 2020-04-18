@@ -56,7 +56,7 @@ while epoch < 1000:
         f.write(json.dumps(weightss))
 
     new_weightss = list(weightss[:4])
-    for i in range(24):
+    for i in range(12):
         new_weightss.append(
             mutate(
                 cross(
@@ -64,7 +64,7 @@ while epoch < 1000:
                     random.choice(weightss[:8]))
                 )
             )
-    for i in range(4):
+    for i in range(16):
         new_weightss.append(random_weights(keys))
     weightss = new_weightss
 
