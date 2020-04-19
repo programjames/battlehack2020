@@ -15,9 +15,10 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "chains", "count", "horizontal", "promoted", "threats", "vertical", "wedges"]
+keys = ["advanced", "back", "captured", "chains", "column", "count", "horizontal", "offense",
+        "promoted", "threats", "vertical", "wedges"]
 
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 if  LOAD_FROM_FILE:
     epoch = 0
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
