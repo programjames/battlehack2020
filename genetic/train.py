@@ -21,12 +21,13 @@ keys = ["advanced", "back", "captured", "center", "chains", "count", "column", "
         "threats", "vertical", "wedges", "center", "distance_enemy",
         "distance_friendly", "finished", "left", "pawns"]
 
-LOAD_FROM_FILE = False
+LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
     epoch = 0
     # restart at 40 on a 16x16 with 500 turns/game
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
         epoch += 1
+    epoch = 11
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
@@ -65,8 +66,8 @@ while epoch < 1000:
         new_weightss.append(
             mutate(
                 cross(
-                    random.choice(weightss[:8]),
-                    random.choice(weightss[:8]))
+                    random.choice(weightss[:32]),
+                    random.choice(weightss[:32]))
                 )
             )
     for i in range(16):

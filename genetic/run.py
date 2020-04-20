@@ -19,6 +19,7 @@ if __name__ == "__main__":
     epoch1 = sys.argv[1]
     bot1 = 0
     epoch2 = sys.argv[2]
+    bot2 = 0
 
     if "/" in epoch1:
         epoch1, bot1 = epoch1.split("/")
@@ -35,8 +36,8 @@ if __name__ == "__main__":
     with open(f"saved_weights/epoch{epoch2}.json") as f:
         weights2 = json.load(f)[bot2]
     
-    r1 = Robot("test", "1", weights1, MAX_ROUNDS)
-    r2 = Robot("test", "2", weights2, MAX_ROUNDS)
+    r1 = Robot("test", weights1)
+    r2 = Robot("test", weights2)
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
