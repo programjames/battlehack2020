@@ -14,7 +14,7 @@ if __name__ == "__main__":
     from fancyviewer import FancyViewer
     from robot import Robot
 
-    MAX_ROUNDS = 500
+    MAX_ROUNDS = 1500
 
     epoch1 = sys.argv[1]
     bot1 = 0

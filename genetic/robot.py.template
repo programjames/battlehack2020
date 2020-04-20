@@ -9,6 +9,7 @@ COUNT_MULTIPLIER = {count_multiplier}
 FILLED_MULTIPLIER = {filled_multiplier}
 HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
 PROMOTED_MULTIPLIER = {promoted_multiplier}
+STALEMATE_MULTIPLIER = {stalemate_multiplier}
 THREATS_MULTIPLIER = {threats_multiplier}
 VERTICAL_MULTIPLIER = {vertical_multiplier}
 WEDGES_MULTIPLIER = {wedges_multiplier}
@@ -110,6 +111,15 @@ def promoted(row, team, board_size):
     else:
         return 1 if row == 0 else 0
 
+def stalemate(board):
+    for r, c in ((1, 1), (1, 3), (2, 2)):
+        if board[r][c] != 1:
+            return 0
+    for r, c in ((0, 1), (0, 3)):
+        if board[r][c] != -1:
+            return 0
+    return 1
+
 def threats(board):
     # +1 for each of our pawns that can get captured
     # Note: double threats counted twice
@@ -200,6 +210,7 @@ def pawn_heuristic(board, row, team, board_size, capture_):
     h += FILLED_MULTIPLIER * filled(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
     h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
+    h += STALEMATE_MULTIPLIER * stalemate(board)
     h += THREATS_MULTIPLIER * threats(board)
     h += VERTICAL_MULTIPLIER * vertical(board)
     h += WEDGES_MULTIPLIER * wedges(board)
@@ -263,6 +274,9 @@ def pawn_turn():
         new_state[2][2] = 0
         states["right"] = (new_state, row + forward, 1)
 
+    if len(states) == 1:
+        return
+    
     best_move = None
     best_h = -100000
     for move in states:

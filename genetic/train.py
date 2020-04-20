@@ -19,8 +19,9 @@ def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
 keys = ["advanced", "back", "capture", "chains", "count", "filled",
-        "horizontal", "promoted", "threats", "vertical", "wedges", "center",
-        "distance_enemy", "distance_friendly", "finished", "left", "pawns"]
+        "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
+        "center", "distance_enemy", "distance_friendly", "finished", "left",
+        "pawns"]
 
 LOAD_FROM_FILE = False
 if  LOAD_FROM_FILE:
@@ -46,8 +47,7 @@ while epoch < 1000:
                 robot2.bot_directory,
                 board_size=16,
                 max_rounds=MAX_ROUNDS,
-                debug=False
-                )
+                debug=False)
             if winner == 0:
                 wins[i] += 1
             else:
