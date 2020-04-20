@@ -23,7 +23,7 @@ keys = ["advanced", "back", "capture", "chains", "count", "filled",
         "center", "distance_enemy", "distance_friendly", "finished", "left",
         "pawns"]
 
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 if  LOAD_FROM_FILE:
     epoch = 0
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
@@ -38,6 +38,8 @@ while epoch < 1000:
     start = time.time()
     robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
     wins = [0 for i in range(len(weightss))]
+    total = 5*len(robots)
+    game_counter = 0
     for i, robot1 in enumerate(robots):
         for c in range(5):
             j = i ^ (1 << c)
@@ -52,7 +54,9 @@ while epoch < 1000:
                 wins[i] += 1
             else:
                 wins[j] += 1
-            print(".", end="", flush=True)
+
+            game_counter += 1
+            print(f"\r{round(game_counter/total*100, 1)}%", end='', flush=True)
             
     print()
     wins, weightss = zip(*sorted(zip(wins, weightss), key=lambda x:x[0], reverse=True))
