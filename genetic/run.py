@@ -15,20 +15,33 @@ if __name__ == "__main__":
     from robot import Robot
 
     epoch1 = sys.argv[1]
+    bot1 = 0
     epoch2 = sys.argv[2]
+
+    if "/" in epoch1:
+        epoch1, bot1 = epoch1.split("/")
+        bot1 = int(bot1)
+
+    if "/" in epoch2:
+        epoch2, bot2 = epoch2.split("/")
+        bot2 = int(bot2)
+    
     
     with open(f"saved_weights/epoch{epoch1}.json") as f:
-        weights1 = json.load(f)[0]
+        weights1 = json.load(f)[bot1]
         
     with open(f"saved_weights/epoch{epoch2}.json") as f:
-        weights2 = json.load(f)[0]
+        weights2 = json.load(f)[bot2]
         
-    r1 = Robot("test", "1", weights1)
-    r2 = Robot("test", "2", weights2)
+    r1 = Robot("test1", weights1)
+    r2 = Robot("test2", weights2)
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
-    game = Game([c1, c2], board_size=16, max_rounds=1000, debug=False, seed=None)
+##    c1 = CodeContainer.from_directory("testbot")
+##    c2 = CodeContainer.from_directory("examplefuncsplayer")
+    
+    game = Game([c1, c2], board_size=16, max_rounds=500, debug=False, seed=None)
     start = time.time()
     while game.running:
         game.turn()
@@ -36,4 +49,4 @@ if __name__ == "__main__":
     print(f"Winner is {game.winner}")
     print(f"Time taken = {end - start}")
     viewer = FancyViewer(game.board_size, game.board_states, window_size=800)
-    viewer.play(delay=0.1)
+    viewer.play(delay=0.2)

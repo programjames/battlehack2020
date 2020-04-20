@@ -15,7 +15,9 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "chains", "count", "horizontal", "promoted", "threats", "vertical", "wedges"]
+keys = ["advanced", "back", "chains", "count", "horizontal", "promoted",
+        "threats", "vertical", "wedges", "center", "distance_enemy",
+        "distance_friendly", "finished", "left", "pawns"]
 
 LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
@@ -30,7 +32,7 @@ else:
 
 while epoch < 1000:
     start = time.time()
-    robots = [Robot(epoch, i, weights) for i, weights in enumerate(weightss)]
+    robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
     wins = [0 for i in range(len(weightss))]
     for i, robot1 in enumerate(robots):
         for c in range(5):
@@ -39,10 +41,9 @@ while epoch < 1000:
             winner = run_game(
                 robot1.bot_directory,
                 robot2.bot_directory,
-                board_size=10,
-                max_rounds=200,
-                debug=False
-                )
+                board_size=16,
+                max_rounds=300,
+                debug=False)
             if winner == 0:
                 wins[i] += 1
             else:
