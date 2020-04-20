@@ -5,7 +5,7 @@ class Robot:
         self.name = name
         self.bot_directory = os.path.join("robots/", name)
         self.file = os.path.join(self.bot_directory, "bot.py")
-        with open("robot.py.template") as f:
+        with open("template.py") as f:
             self.code = f.read()
         
         for key, val in multipliers.items():

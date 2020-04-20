@@ -23,7 +23,7 @@ keys = ["advanced", "back", "capture", "chains", "count", "filled",
         "center", "distance_enemy", "distance_friendly", "finished", "left",
         "pawns"]
 
-LOAD_FROM_FILE = False
+LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
     epoch = 0
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):

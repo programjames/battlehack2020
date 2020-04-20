@@ -36,8 +36,8 @@ if __name__ == "__main__":
     with open(f"saved_weights/epoch{epoch2}.json") as f:
         weights2 = json.load(f)[bot2]
     
-    r1 = Robot("test", weights1)
-    r2 = Robot("test", weights2)
+    r1 = Robot("test1", weights1)
+    r2 = Robot("test2", weights2)
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 

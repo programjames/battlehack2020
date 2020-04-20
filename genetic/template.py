@@ -230,12 +230,8 @@ def overlord_heuristic(board, col, board_size):
 def copy(board):
     return [row.copy() for row in board]
 
-turn_since_spawn = 0
-
 def pawn_turn():
-    global turn_since_spawn
-    turn_since_spawn += 1
-    
+    log(f"MY STALEMATE MULTIPLIER = {STALEMATE_MULTIPLIER}")
     board_size = get_board_size()
     team = get_team()
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
@@ -256,10 +252,18 @@ def pawn_turn():
     
     states = {"sit": (board, row, 0)}
 
+
+    if stalemate(board):
+        log("stalemate sit")
+
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
+        if stalemate(new_state):
+            log("stalemate forward")
+        else:
+            log("Not stalemate forward")
         states["forward"] = (new_state, row + forward, 0)
     
     if board[3][1] == -1:
