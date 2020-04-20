@@ -14,7 +14,7 @@ VERTICAL_MULTIPLIER = {vertical_multiplier}
 WEDGES_MULTIPLIER = {wedges_multiplier}
 
 
-GAME_END = 250
+GAME_END = {game_end}
 
 
 def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
@@ -200,6 +200,9 @@ def pawn_turn():
         new_state[2][2] = 0
         states["right"] = (new_state, row + forward, col+1, True)
 
+    if len(states) == 1:
+        return
+
     best_move = None
     best_h = -100000
     for move in states:
@@ -224,18 +227,30 @@ def pawn_turn():
 def overlord_turn():
     board_size = get_board_size()
     team = get_team()
-    opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
-    
-    if team == Team.WHITE:
-        index = 0
-    else:
-        index = board_size - 1
-
-    for _ in range(board_size):
-        i = random.randint(0, board_size - 1)
-        if not check_space(index, i):
-            spawn(index, i)
-            break
+    board = get_board()
+    board = [[0 if not x else 1 if x == team else -1 for x in row] for row in board]
+    cols = [0 for i in range(board_size)]
+    for row in board:
+        for i,x in enumerate(row):
+            cols[i] = cols[i] + x
+            if i > 0:
+                cols[i-1] = cols[i-1] + x/2
+            if i < board_size - 1:
+                cols[i+1] = cols[i+1] + x/2
+    m = 10000
+    index = [0]
+    spawn_row = 0 if team == Team.WHITE else board_size - 1
+    found = False
+    for i in range(board_size):
+        if not check_space(spawn_row, i):
+            if cols[i] < m:
+                found = True
+                m = cols[i]
+                index = [i]
+            elif cols[i] == m:
+                index.append(i)
+    if found:
+        spawn(spawn_row, random.choice(index))
 
 def turn():
     """

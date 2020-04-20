@@ -6,6 +6,8 @@ import time
 from robot import Robot
 from run import run_game
 
+MAX_ROUNDS = 500
+
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
 
@@ -18,11 +20,13 @@ def random_weights(keys, amount=10):
 keys = ["advanced", "back", "captured", "chains", "column", "count", "horizontal", "offense",
         "promoted", "threats", "vertical", "wedges"]
 
-LOAD_FROM_FILE = False
+LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
     epoch = 0
+    # restart at 40 on a 16x16 with 500 turns/game
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
         epoch += 1
+    epoch = 41
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
@@ -31,7 +35,7 @@ else:
 
 while epoch < 1000:
     start = time.time()
-    robots = [Robot(epoch, i, weights) for i, weights in enumerate(weightss)]
+    robots = [Robot(epoch, i, weights, MAX_ROUNDS) for i, weights in enumerate(weightss)]
     wins = [0 for i in range(len(weightss))]
     for i, robot1 in enumerate(robots):
         for c in range(5):
@@ -40,8 +44,8 @@ while epoch < 1000:
             winner = run_game(
                 robot1.bot_directory,
                 robot2.bot_directory,
-                board_size=10,
-                max_rounds=200,
+                board_size=16,
+                max_rounds=MAX_ROUNDS,
                 debug=False
                 )
             if winner == 0:
@@ -57,7 +61,7 @@ while epoch < 1000:
         f.write(json.dumps(weightss))
 
     new_weightss = list(weightss[:4])
-    for i in range(24):
+    for i in range(12):
         new_weightss.append(
             mutate(
                 cross(
@@ -65,7 +69,7 @@ while epoch < 1000:
                     random.choice(weightss[:8]))
                 )
             )
-    for i in range(4):
+    for i in range(16):
         new_weightss.append(random_weights(keys))
     weightss = new_weightss
 

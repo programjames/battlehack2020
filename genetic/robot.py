@@ -1,7 +1,7 @@
 import os
 
 class Robot:
-    def __init__(self, epoch, number, multipliers, root="robots/"):
+    def __init__(self, epoch, number, multipliers, max_rounds, root="robots/"):
         self.epoch = epoch
         self.number = number
         self.epoch_directory = os.path.join(root, f"epoch{self.epoch}/")
@@ -12,6 +12,7 @@ class Robot:
         
         for key, val in multipliers.items():
             self.code = self.code.replace(f"{{{key}_multiplier}}", str(val))
+        self.code = self.code.replace("{game_end}", str(max_rounds))
         if not os.path.isdir(self.epoch_directory):
             os.mkdir(self.epoch_directory)
         if not os.path.isdir(self.bot_directory):
