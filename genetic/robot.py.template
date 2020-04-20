@@ -22,6 +22,9 @@ LEFT_MULTIPLIER = {left_multiplier}
 PAWNS_MULTIPLIER = {pawns_multiplier}
 
 
+GAME_END = 500
+
+
 def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
     # check space, except doesn't hit you with game errors
     if r < 0 or c < 0 or c >= board_size or r >= board_size:
@@ -37,17 +40,13 @@ def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
         return 0
 
 ### PAWN METHODS ###
-def advanced(board):
-    # +1 for how advanced each of our pawns is, -1 for how advanced each enemy pawn is
-    h = 0
-    for x in range(5):
-        for y in range(5):
-            if board[y][x] == 1:
-                h += y
-            if board[y][x] == -1:
-                h -= 4 - y
-    return h
-	
+def advanced(row, team, board_size):
+    # +1 for how far the pawn has travelled.
+    if team == Team.WHITE:
+        return row
+    else:
+        return board_size - row - 1
+
 def back(row, team, board_size):
     if team == Team.WHITE:
         return 1 if row == 0 else 0
@@ -97,6 +96,13 @@ def horizontal(board):
             if board[y][x] == board[y][x+1] == -1:
                 h -= 1
     return h
+
+def offense(row, team, board_size, turn):
+    # +turn for how far the pawn has travelled.
+    if team == Team.WHITE:
+        return row * turn
+    else:
+        return (board_size - row - 1) * turn
 
 def promoted(row, team, board_size):
     if team == Team.WHITE:
@@ -186,7 +192,7 @@ def pawn_heuristic(board, row, team, board_size, capture_):
     # Heuristic for how good a position is
     
     h = 0
-    h += ADVANCED_MULTIPLIER * advanced(board)
+    h += ADVANCED_MULTIPLIER * advanced(row, team, board_size)
     h += BACK_MULTIPLIER * back(row, team, board_size)
     h += CAPTURE_MULTIPLIER * capture_
     h += CHAINS_MULTIPLIER * chains(board)
@@ -213,7 +219,12 @@ def overlord_heuristic(board, col, board_size):
 def copy(board):
     return [row.copy() for row in board]
 
+turn_since_spawn = 0
+
 def pawn_turn():
+    global turn_since_spawn
+    turn_since_spawn += 1
+    
     board_size = get_board_size()
     team = get_team()
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
@@ -233,16 +244,19 @@ def pawn_turn():
         board = board[::-1]
     
     states = {"sit": (board, row, 0)}
+
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
         states["forward"] = (new_state, row + forward, 0)
+    
     if board[3][1] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
         states["left"] = (new_state, row + forward, 1)
+    
     if board[3][3] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
