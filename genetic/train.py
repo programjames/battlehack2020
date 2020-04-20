@@ -23,7 +23,8 @@ keys = ["advanced", "back", "capture", "chains", "count", "filled",
         "center", "distance_enemy", "distance_friendly", "finished", "left",
         "pawns"]
 
-if LOAD_FROM_FILE:
+LOAD_FROM_FILE = False
+if  LOAD_FROM_FILE:
     epoch = 0
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
         epoch += 1
@@ -64,8 +65,8 @@ while epoch < 1000:
         new_weightss.append(
             mutate(
                 cross(
-                    random.choice(weightss[:8]),
-                    random.choice(weightss[:8]))
+                    random.choice(weightss[:32]),
+                    random.choice(weightss[:32]))
                 )
             )
     for i in range(8):
