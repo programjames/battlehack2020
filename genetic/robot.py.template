@@ -3,8 +3,10 @@ import random
 ### PAWN WEIGHTS ###
 ADVANCED_MULTIPLIER = {advanced_multiplier}
 BACK_MULTIPLIER = {back_multiplier}
+CAPTURE_MULTIPLIER = {capture_multiplier}
 CHAINS_MULTIPLIER = {chains_multiplier}
 COUNT_MULTIPLIER = {count_multiplier}
+FILLED_MULTIPLIER = {filled_multiplier}
 HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
 PROMOTED_MULTIPLIER = {promoted_multiplier}
 THREATS_MULTIPLIER = {threats_multiplier}
@@ -75,6 +77,15 @@ def count(board):
         for y in range(5):
             h += board[y][x]
     return h
+
+def filled(board):
+    # +1 if the back pawns are all ours
+    h = 0
+    for r in (1, 2):
+        for c in (1, 2, 3):
+            if board[r][c] != 1:
+                return 0
+    return 1
 
 def horizontal(board):
     # +1 for each pair of adjacent pawns horizontally, -1 for enemy pawns in such a configuration
@@ -171,14 +182,16 @@ def pawns(board, col, board_size):
     return s
 
 ### HEURISTICS ###
-def pawn_heuristic(board, row, team, board_size):
+def pawn_heuristic(board, row, team, board_size, capture_):
     # Heuristic for how good a position is
     
     h = 0
     h += ADVANCED_MULTIPLIER * advanced(board)
     h += BACK_MULTIPLIER * back(row, team, board_size)
+    h += CAPTURE_MULTIPLIER * capture_
     h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
+    h += FILLED_MULTIPLIER * filled(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
     h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
     h += THREATS_MULTIPLIER * threats(board)
@@ -219,28 +232,28 @@ def pawn_turn():
         forward = -1
         board = board[::-1]
     
-    states = {"sit": (board, row)}
+    states = {"sit": (board, row, 0)}
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
-        states["forward"] = (new_state, row + forward)
+        states["forward"] = (new_state, row + forward, 0)
     if board[3][1] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["left"] = (new_state, row + forward)
+        states["left"] = (new_state, row + forward, 1)
     if board[3][3] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["right"] = (new_state, row + forward)
+        states["right"] = (new_state, row + forward, 1)
 
     best_move = None
     best_h = -100000
     for move in states:
-        state_board, state_row = states[move]
-        h = pawn_heuristic(state_board, state_row, team, board_size)
+        state_board, state_row, state_capture = states[move]
+        h = pawn_heuristic(state_board, state_row, team, board_size, state_capture)
         if best_move == None or h > best_h:
             best_move = move
             best_h = h

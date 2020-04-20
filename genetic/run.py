@@ -41,7 +41,7 @@ if __name__ == "__main__":
 ##    c1 = CodeContainer.from_directory("testbot")
 ##    c2 = CodeContainer.from_directory("examplefuncsplayer")
     
-    game = Game([c1, c2], board_size=16, max_rounds=500, debug=False, seed=None)
+    game = Game([c1, c2], board_size=16, max_rounds=1500, debug=False, seed=None)
     start = time.time()
     while game.running:
         game.turn()
@@ -49,4 +49,4 @@ if __name__ == "__main__":
     print(f"Winner is {game.winner}")
     print(f"Time taken = {end - start}")
     viewer = FancyViewer(game.board_size, game.board_states, window_size=800)
-    viewer.play(delay=0.2)
+    viewer.play(delay=0.02)

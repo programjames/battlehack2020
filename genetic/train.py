@@ -15,9 +15,9 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "chains", "count", "horizontal", "promoted",
-        "threats", "vertical", "wedges", "center", "distance_enemy",
-        "distance_friendly", "finished", "left", "pawns"]
+keys = ["advanced", "back", "capture", "chains", "count", "filled",
+        "horizontal", "promoted", "threats", "vertical", "wedges", "center",
+        "distance_enemy", "distance_friendly", "finished", "left", "pawns"]
 
 LOAD_FROM_FILE = True
 if  LOAD_FROM_FILE:
