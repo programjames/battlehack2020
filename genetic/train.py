@@ -2,11 +2,13 @@ import random
 import json
 import os
 import time
+import multiprocessing
 
 from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
+NUM_ROBOTS = 32
 LOAD_FROM_FILE = True
 
 def cross(weights1, weights2):
@@ -18,65 +20,81 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "capture", "chains", "count", "filled",
-        "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
-        "center", "distance_enemy", "distance_friendly", "finished", "left",
-        "pawns"]
+class ProcessManager():
+    def __init__(self, robots):
+        self.wins = multiprocessing.Array('i', len(robots))
+        self.games_finished = multiprocessing.Value('i', 0)
+        self.robots = robots
+    
+    def run_game(self, dir1, dir2):
+        winner = run_game(dir1, dir2, board_size=16, max_rounds=MAX_ROUNDS)
+        if winner == 0:
+            self.wins[i] += 1
+        else:
+            self.wins[j] += 1
+        self.games_finished.value += 1
+        print(f"\r{round(self.games_finished.value/1.60, 1)}% complete!", end='')
+    
+    def new_game(self, i, j):
+        p = multiprocessing.Process(target=self.run_game, args=(self.robots[i].bot_directory, self.robots[j].bot_directory))
+        p.start()
+        return p
 
-LOAD_FROM_FILE = True
-if  LOAD_FROM_FILE:
-    epoch = 0
-    while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
-        epoch += 1
-    with open(f"saved_weights/epoch{epoch-1}.json") as f:
-        weightss = json.load(f)
-else:
-    weightss = [random_weights(keys) for i in range(32)]
-    epoch = 0
+if __name__ == "__main__":
 
-while epoch < 1000:
-    start = time.time()
-    robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
-    wins = [0 for i in range(len(weightss))]
-    for i, robot1 in enumerate(robots):
-        for c in range(5):
-            j = i ^ (1 << c)
-            robot2 = robots[j]
-            winner = run_game(
-                robot1.bot_directory,
-                robot2.bot_directory,
-                board_size=16,
-                max_rounds=MAX_ROUNDS,
-                debug=False)
-            if winner == 0:
-                wins[i] += 1
-            else:
-                wins[j] += 1
-            print(".", end="", flush=True)
-            
-    print()
-    wins, weightss = zip(*sorted(zip(wins, weightss), key=lambda x:x[0], reverse=True))
+    keys = ["advanced", "back", "capture", "chains", "count", "filled",
+            "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
+            "center", "distance_enemy", "distance_friendly", "finished", "left",
+            "pawns"]
 
-    with open(f"saved_weights/epoch{epoch}.json", "w") as f:
-        f.write(json.dumps(weightss))
+    LOAD_FROM_FILE = True
+    if  LOAD_FROM_FILE:
+        epoch = 0
+        while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
+            epoch += 1
+        with open(f"saved_weights/epoch{epoch-1}.json") as f:
+            weightss = json.load(f)
+    else:
+        weightss = [random_weights(keys) for i in range(32)]
+        epoch = 0
 
-    new_weightss = list(weightss[:4])
-    for i in range(20):
-        new_weightss.append(
-            mutate(
-                cross(
-                    random.choice(weightss[:32]),
-                    random.choice(weightss[:32]))
+    while epoch < 1000:
+        start = time.time()
+        robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
+        pm = ProcessManager(robots)
+        processes = []
+        for i, robot1 in enumerate(robots):
+            for c in range(5):
+                j = i ^ (1 << c)
+                processes.append(pm.new_game(i, j))
+        for proc in processes:
+            proc.join()
+
+        wins = pm.wins
+                
+        print()
+        wins, weightss = zip(*sorted(zip(wins, weightss), key=lambda x:x[0], reverse=True))
+
+        with open(f"saved_weights/epoch{epoch}.json", "w") as f:
+            f.write(json.dumps(weightss))
+
+        new_weightss = list(weightss[:4])
+        for i in range(20):
+            new_weightss.append(
+                mutate(
+                    cross(
+                        random.choice(weightss[:32]),
+                        random.choice(weightss[:32]))
+                    )
                 )
-            )
-    for i in range(8):
-        new_weightss.append(random_weights(keys))
-    weightss = new_weightss
+        for i in range(8):
+            new_weightss.append(random_weights(keys))
+        weightss = new_weightss
 
-    with open(f"saved_weights/epoch{epoch}.json", "w") as f:
-        json.dump(weightss, f)
+        with open(f"saved_weights/epoch{epoch}.json", "w") as f:
+            json.dump(weightss, f)
 
-    end = time.time()
-    print(f"Epoch {epoch} completed!")
-    print(f"Time for epoch = {end - start}")
-    epoch += 1
+        end = time.time()
+        print(f"Epoch {epoch} completed!")
+        print(f"Time for epoch = {end - start}")
+        epoch += 1
