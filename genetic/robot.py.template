@@ -3,12 +3,11 @@ import random
 ### PAWN WEIGHTS ###
 ADVANCED_MULTIPLIER = {advanced_multiplier}
 BACK_MULTIPLIER = {back_multiplier}
+CAPTURE_MULTIPLIER = {capture_multiplier}
 CHAINS_MULTIPLIER = {chains_multiplier}
-CAPTURED_MULTIPLIER = {captured_multiplier}
-COLUMN_MULTIPLIER = {column_multiplier}
 COUNT_MULTIPLIER = {count_multiplier}
+FILLED_MULTIPLIER = {filled_multiplier}
 HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
-OFFENSE_MULTIPLIER = {offense_multiplier}
 PROMOTED_MULTIPLIER = {promoted_multiplier}
 THREATS_MULTIPLIER = {threats_multiplier}
 VERTICAL_MULTIPLIER = {vertical_multiplier}
@@ -54,9 +53,6 @@ def back(row, team, board_size):
     else:
         return 1 if row == board_size - 1 else 0
 
-def captured(captured):
-    return 1 if captured else 0
-
 def chains(board):
     # +1 for each pawn in one of our chains, -1 for each pawn in enemy chain
     h = 0
@@ -72,12 +68,6 @@ def chains(board):
                 h -= 1
     return h
 
-def column(column, board_size):
-    col2 = board_size-1-column
-    if col2 > column:
-        return col2
-    return column
-
 def count(board):
     # +1 for each of our pawns, -1 for each enemy pawn
     # sum() is not defined
@@ -86,6 +76,15 @@ def count(board):
         for y in range(5):
             h += board[y][x]
     return h
+
+def filled(board):
+    # +1 if the back pawns are all ours
+    h = 0
+    for r in (1, 2):
+        for c in (1, 2, 3):
+            if board[r][c] != 1:
+                return 0
+    return 1
 
 def horizontal(board):
     # +1 for each pair of adjacent pawns horizontally, -1 for enemy pawns in such a configuration
@@ -189,18 +188,17 @@ def pawns(board, col, board_size):
     return s
 
 ### HEURISTICS ###
-def pawn_heuristic(board, row, col, capt, team, board_size, turn):
+def pawn_heuristic(board, row, team, board_size, capture_):
     # Heuristic for how good a position is
     
     h = 0
     h += ADVANCED_MULTIPLIER * advanced(row, team, board_size)
     h += BACK_MULTIPLIER * back(row, team, board_size)
-    h += CAPTURED_MULTIPLIER * captured(capt)
+    h += CAPTURE_MULTIPLIER * capture_
     h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
-    h += COLUMN_MULTIPLIER * column(col, board_size)
+    h += FILLED_MULTIPLIER * filled(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
-    h += OFFENSE_MULTIPLIER * offense(row, team, board_size, turn) / GAME_END
     h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
     h += THREATS_MULTIPLIER * threats(board)
     h += VERTICAL_MULTIPLIER * vertical(board)
@@ -244,34 +242,32 @@ def pawn_turn():
     else:
         forward = -1
         board = board[::-1]
+    
+    states = {"sit": (board, row, 0)}
 
-    # Each state looks like:
-    # ( board position, my_row, my_col, did_I_capture, turn )
-    states = {"sit": (board, row, col, False)}
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
-        states["forward"] = (new_state, row + forward, col, False)
+        states["forward"] = (new_state, row + forward, 0)
+    
     if board[3][1] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["left"] = (new_state, row + forward, col-1, True)
+        states["left"] = (new_state, row + forward, 1)
+    
     if board[3][3] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["right"] = (new_state, row + forward, col+1, True)
-
-    if len(states) == 1:
-        return
+        states["right"] = (new_state, row + forward, 1)
 
     best_move = None
     best_h = -100000
     for move in states:
-        state_board, state_row, state_col, state_captured = states[move]
-        h = pawn_heuristic(state_board, state_row, state_col, state_captured, team, board_size, turn_since_spawn)
+        state_board, state_row, state_capture = states[move]
+        h = pawn_heuristic(state_board, state_row, team, board_size, state_capture)
         if best_move == None or h > best_h:
             best_move = move
             best_h = h

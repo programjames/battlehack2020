@@ -42,6 +42,7 @@ if __name__ == "__main__":
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
     game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=False, seed=None)
+
     start = time.time()
     while game.running:
         print('.', end='', flush=True)

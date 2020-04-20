@@ -7,6 +7,7 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
+LOAD_FROM_FILE = True
 
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
@@ -17,17 +18,15 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "captured", "center", "chains", "count", "column", "horizontal", "offense", "promoted",
-        "threats", "vertical", "wedges", "center", "distance_enemy",
-        "distance_friendly", "finished", "left", "pawns"]
+keys = ["advanced", "back", "capture", "chains", "count", "filled",
+        "horizontal", "promoted", "threats", "vertical", "wedges", "center",
+        "distance_enemy", "distance_friendly", "finished", "left", "pawns"]
 
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 if  LOAD_FROM_FILE:
     epoch = 0
-    # restart at 40 on a 16x16 with 500 turns/game
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
         epoch += 1
-    epoch = 11
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
@@ -62,7 +61,7 @@ while epoch < 1000:
         f.write(json.dumps(weightss))
 
     new_weightss = list(weightss[:4])
-    for i in range(12):
+    for i in range(20):
         new_weightss.append(
             mutate(
                 cross(
@@ -70,7 +69,7 @@ while epoch < 1000:
                     random.choice(weightss[:32]))
                 )
             )
-    for i in range(16):
+    for i in range(8):
         new_weightss.append(random_weights(keys))
     weightss = new_weightss
 
