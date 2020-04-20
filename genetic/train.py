@@ -20,20 +20,6 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-##wins = [0 for i in range(NUM_ROBOTS)]
-##games_finished = 0
-##total_games = NUM_ROBOTS * 5
-##
-##def process_game(robots, i, j):
-##    global wins, games_finished, total_games
-##    winner = run_game(self.robots[i].bot_directory, self.robots[j].bot_directory, board_size=16, max_rounds=MAX_ROUNDS)
-##    if winner == 0:
-##        wins[i] += 1
-##    else:
-##        wins[j] += 1
-##    games_finished += 1
-##    print(f"\r{round(self.games_finished/total_games*100, 1)}% complete!", end='')
-
 class ProcessManager():
     def __init__(self, robots):
         self.wins = multiprocessing.Array('i', len(robots))
