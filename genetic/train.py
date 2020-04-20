@@ -17,16 +17,16 @@ def mutate(weights, amount=1):
 def random_weights(keys, amount=10):
     return {key: random.random() * 2 * amount - amount for key in keys}
 
-keys = ["advanced", "back", "captured", "chains", "column", "count", "horizontal", "offense",
-        "promoted", "threats", "vertical", "wedges"]
+keys = ["advanced", "back", "captured", "center", "chains", "count", "column", "horizontal", "offense", "promoted",
+        "threats", "vertical", "wedges", "center", "distance_enemy",
+        "distance_friendly", "finished", "left", "pawns"]
 
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 if  LOAD_FROM_FILE:
     epoch = 0
     # restart at 40 on a 16x16 with 500 turns/game
     while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
         epoch += 1
-    epoch = 41
     with open(f"saved_weights/epoch{epoch-1}.json") as f:
         weightss = json.load(f)
 else:
@@ -35,7 +35,7 @@ else:
 
 while epoch < 1000:
     start = time.time()
-    robots = [Robot(epoch, i, weights, MAX_ROUNDS) for i, weights in enumerate(weightss)]
+    robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
     wins = [0 for i in range(len(weightss))]
     for i, robot1 in enumerate(robots):
         for c in range(5):

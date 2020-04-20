@@ -17,14 +17,24 @@ if __name__ == "__main__":
     MAX_ROUNDS = 500
 
     epoch1 = sys.argv[1]
+    bot1 = 0
     epoch2 = sys.argv[2]
+
+    if "/" in epoch1:
+        epoch1, bot1 = epoch1.split("/")
+        bot1 = int(bot1)
+
+    if "/" in epoch2:
+        epoch2, bot2 = epoch2.split("/")
+        bot2 = int(bot2)
+    
     
     with open(f"saved_weights/epoch{epoch1}.json") as f:
-        weights1 = json.load(f)[0]
+        weights1 = json.load(f)[bot1]
         
     with open(f"saved_weights/epoch{epoch2}.json") as f:
-        weights2 = json.load(f)[0]
-        
+        weights2 = json.load(f)[bot2]
+    
     r1 = Robot("test", "1", weights1, MAX_ROUNDS)
     r2 = Robot("test", "2", weights2, MAX_ROUNDS)
     c1 = CodeContainer.from_directory(r1.bot_directory)

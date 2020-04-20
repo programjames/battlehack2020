@@ -1,29 +1,25 @@
 import random
 
 ### PAWN WEIGHTS ###
-ADVANCED_MULTIPLIER = {advanced_multiplier}
-BACK_MULTIPLIER = {back_multiplier}
-CHAINS_MULTIPLIER = {chains_multiplier}
-CAPTURED_MULTIPLIER = {captured_multiplier}
-COLUMN_MULTIPLIER = {column_multiplier}
-COUNT_MULTIPLIER = {count_multiplier}
-HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
-OFFENSE_MULTIPLIER = {offense_multiplier}
-PROMOTED_MULTIPLIER = {promoted_multiplier}
-THREATS_MULTIPLIER = {threats_multiplier}
-VERTICAL_MULTIPLIER = {vertical_multiplier}
-WEDGES_MULTIPLIER = {wedges_multiplier}
+ADVANCED_MULTIPLIER = 8.5
+BACK_MULTIPLIER = -2
+CHAINS_MULTIPLIER = -1.3
+COUNT_MULTIPLIER = -1.7
+FILLED_MULTIPLIER = 0
+HORIZONTAL_MULTIPLIER = -2.5
+PROMOTED_MULTIPLIER = 0
+THREATS_MULTIPLIER = -11.5
+VERTICAL_MULTIPLIER = -3
+WEDGES_MULTIPLIER = -1
 
 ### OVERLORD WEIGHTS ###
-CENTER_MULTIPLIER = {center_multiplier}
-DISTANCE_ENEMY_MULTIPLIER = {distance_enemy_multiplier}
-DISTANCE_FRIENDLY_MULTIPLIER = {distance_friendly_multiplier}
-FINISHED_MULTIPLIER = {finished_multiplier}
-LEFT_MULTIPLIER = {left_multiplier}
-PAWNS_MULTIPLIER = {pawns_multiplier}
-
-
-GAME_END = 500
+CENTER_MULTIPLIER = -1
+DISTANCE_ENEMY_MULTIPLIER = -2
+DISTANCE_FRIENDLY_MULTIPLIER = 1.8
+FINISHED_MULTIPLIER = -10
+LEFT_MULTIPLIER = 0
+PAWNS_MULTIPLIER = -0.2
+RANDOM_MULTIPLIER = 0
 
 
 def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
@@ -41,21 +37,22 @@ def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
         return 0
 
 ### PAWN METHODS ###
-def advanced(row, team, board_size):
-    # +1 for how far the pawn has travelled.
-    if team == Team.WHITE:
-        return row
-    else:
-        return board_size - row - 1
-
+def advanced(board):
+    # +1 for how advanced each of our pawns is, -1 for how advanced each enemy pawn is
+    h = 0
+    for x in range(5):
+        for y in range(5):
+            if board[y][x] == 1:
+                h += y
+            if board[y][x] == -1:
+                h -= 4 - y
+    return h
+	
 def back(row, team, board_size):
     if team == Team.WHITE:
         return 1 if row == 0 else 0
     else:
         return 1 if row == board_size - 1 else 0
-
-def captured(captured):
-    return 1 if captured else 0
 
 def chains(board):
     # +1 for each pawn in one of our chains, -1 for each pawn in enemy chain
@@ -72,12 +69,6 @@ def chains(board):
                 h -= 1
     return h
 
-def column(column, board_size):
-    col2 = board_size-1-column
-    if col2 > column:
-        return col2
-    return column
-
 def count(board):
     # +1 for each of our pawns, -1 for each enemy pawn
     # sum() is not defined
@@ -86,6 +77,15 @@ def count(board):
         for y in range(5):
             h += board[y][x]
     return h
+
+def filled(board):
+    # +1 if the back pawns are all ours
+    h = 0
+    for r in (0, 1, 2):
+        for c in (0, 1, 2, 3, 4):
+            if board[r][c] != 1:
+                return 0
+    return 1
 
 def horizontal(board):
     # +1 for each pair of adjacent pawns horizontally, -1 for enemy pawns in such a configuration
@@ -97,13 +97,6 @@ def horizontal(board):
             if board[y][x] == board[y][x+1] == -1:
                 h -= 1
     return h
-
-def offense(row, team, board_size, turn):
-    # +turn for how far the pawn has travelled.
-    if team == Team.WHITE:
-        return row * turn
-    else:
-        return (board_size - row - 1) * turn
 
 def promoted(row, team, board_size):
     if team == Team.WHITE:
@@ -189,18 +182,16 @@ def pawns(board, col, board_size):
     return s
 
 ### HEURISTICS ###
-def pawn_heuristic(board, row, col, capt, team, board_size, turn):
+def pawn_heuristic(board, row, team, board_size):
     # Heuristic for how good a position is
     
     h = 0
-    h += ADVANCED_MULTIPLIER * advanced(row, team, board_size)
+    h += ADVANCED_MULTIPLIER * advanced(board)
     h += BACK_MULTIPLIER * back(row, team, board_size)
-    h += CAPTURED_MULTIPLIER * captured(capt)
     h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
-    h += COLUMN_MULTIPLIER * column(col, board_size)
+    h += FILLED_MULTIPLIER * filled(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
-    h += OFFENSE_MULTIPLIER * offense(row, team, board_size, turn) / GAME_END
     h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
     h += THREATS_MULTIPLIER * threats(board)
     h += VERTICAL_MULTIPLIER * vertical(board)
@@ -215,18 +206,14 @@ def overlord_heuristic(board, col, board_size):
     h += FINISHED_MULTIPLIER * finished(board, col, board_size)
     h += LEFT_MULTIPLIER * left(col, board_size)
     h += PAWNS_MULTIPLIER * pawns(board, col, board_size)
+    h += RANDOM_MULTIPLIER * random.random()
     return h
     
 
 def copy(board):
     return [row.copy() for row in board]
 
-turn_since_spawn = 0
-
 def pawn_turn():
-    global turn_since_spawn
-    turn_since_spawn += 1
-    
     board_size = get_board_size()
     team = get_team()
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
@@ -244,34 +231,29 @@ def pawn_turn():
     else:
         forward = -1
         board = board[::-1]
-
-    # Each state looks like:
-    # ( board position, my_row, my_col, did_I_capture, turn )
-    states = {"sit": (board, row, col, False)}
+    
+    states = {"sit": (board, row)}
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
-        states["forward"] = (new_state, row + forward, col, False)
+        states["forward"] = (new_state, row + forward)
     if board[3][1] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["left"] = (new_state, row + forward, col-1, True)
+        states["left"] = (new_state, row + forward)
     if board[3][3] == -1:
         new_state = copy(board)
         new_state[3][1] = 1
         new_state[2][2] = 0
-        states["right"] = (new_state, row + forward, col+1, True)
-
-    if len(states) == 1:
-        return
+        states["right"] = (new_state, row + forward)
 
     best_move = None
     best_h = -100000
     for move in states:
-        state_board, state_row, state_col, state_captured = states[move]
-        h = pawn_heuristic(state_board, state_row, state_col, state_captured, team, board_size, turn_since_spawn)
+        state_board, state_row = states[move]
+        h = pawn_heuristic(state_board, state_row, team, board_size)
         if best_move == None or h > best_h:
             best_move = move
             best_h = h
@@ -308,7 +290,7 @@ def overlord_turn():
             continue
         
         h = overlord_heuristic(board, col, board_size)
-        if best_col is None or h < best_h:
+        if best_col is None or h > best_h:
             best_col = col
             best_h = h
 
