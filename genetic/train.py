@@ -9,7 +9,7 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
-LOAD_FROM_FILE = False
+LOAD_FROM_FILE = True
 
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
@@ -104,8 +104,8 @@ if __name__ == "__main__":
             new_weightss.append(
                 mutate(
                     cross(
-                        random.choice(weightss[:32]),
-                        random.choice(weightss[:32]))
+                        random.choice(weightss[:8]),
+                        random.choice(weightss[:8]))
                     )
                 )
         for i in range(8):
