@@ -9,7 +9,7 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
@@ -17,8 +17,11 @@ def cross(weights1, weights2):
 def mutate(weights, amount=1):
     return {key: weight + random.random() * 2 * amount - amount for key, weight in weights.items()}
 
+def random_weight(amount=10):
+    return random.random() * 2 * amount - amount
+
 def random_weights(keys, amount=10):
-    return {key: random.random() * 2 * amount - amount for key in keys}
+    return {key: random_weight(amount) for key in keys}
 
 class ProcessManager():
     def __init__(self, robots=None):        
@@ -53,18 +56,21 @@ class ProcessManager():
 
 if __name__ == "__main__":
 
-    keys = ["advanced", "back", "capture", "chains", "count", "filled",
+    keys = ["advanced", "back", "capture", "chains", "count", "enemy_promoted", "filled",
             "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
             "center", "distance_enemy", "distance_friendly", "finished", "left",
             "pawns"]
 
-    LOAD_FROM_FILE = True
     if  LOAD_FROM_FILE:
         epoch = 0
         while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
             epoch += 1
         with open(f"saved_weights/epoch{epoch-1}.json") as f:
             weightss = json.load(f)
+            for weights in weightss:
+                for key in keys:
+                    if key not in weights:
+                        weights[key] = random_weight()
     else:
         weightss = [random_weights(keys) for i in range(32)]
         epoch = 0
@@ -94,15 +100,15 @@ if __name__ == "__main__":
             f.write(json.dumps(weightss))
 
         new_weightss = list(weightss[:4])
-        for i in range(12):
+        for i in range(20):
             new_weightss.append(
                 mutate(
                     cross(
-                        random.choice(weightss[:8]),
-                        random.choice(weightss[:8]))
+                        random.choice(weightss[:32]),
+                        random.choice(weightss[:32]))
                     )
                 )
-        for i in range(16):
+        for i in range(8):
             new_weightss.append(random_weights(keys))
         weightss = new_weightss
 
