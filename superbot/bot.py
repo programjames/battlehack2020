@@ -34,10 +34,13 @@ class Overlord:
     def count_col(self, col, team=1):
         return self.count_pawns(0, col, self.board_size, col+1, team)
 
+    def is_finished(self, col):
+        return self.board[self.board_size-1][col] == 1
+
     def get_counts(self):
         counts = []
         for col in range(self.board_size):
-            counts.append(self.count_col(1) - self.count_col(-1))
+            counts.append(self.count_col(col, 1) - self.count_col(col, -1))
         return counts
 
     def get_boundary(self):
@@ -80,7 +83,7 @@ class Overlord:
                 weak_spots[col] = (nearby_enemies - nearby_friends) + 1000
 
         for col in range(self.board_size):
-            if boundary[col] < 4:
+            if boundary[col] < 5:
                 weak_spots[col] = -boundary[col] + 1000000
 
         return weak_spots
@@ -222,6 +225,9 @@ class Pawn:
     def count_L_enemies(self):
         return (1 if self.board[4][1] == -1 else 0) + (1 if self.board[4][3] == -1 else 0)
 
+    def count_side_enemies(self):
+        return (1 if self.board[2][1] == -1 else 0) + (1 if self.board[2][3] == -1 else 0)
+    
     def must_support_corners(self):
         if self.board[4][0] == -1 and self.board[3][1] == 1:
             return True
@@ -245,7 +251,7 @@ class Pawn:
 
         if self.must_support_corners():
             return
-
+        
         threats = self.get_threats()
         if len(threats) > 0:
             self.capture(threats[0])
@@ -254,6 +260,12 @@ class Pawn:
         if self.empty_ahead():
             self.move_forward()
             return
+
+        side_enemies = self.count_side_enemies()
+        if side_enemies == 1 and self.board[1][2] == 1:
+            if (self.board[1][0] == 1 and self.board[2][1] == -1) or (self.board[1][4] == 1 and self.board[2][3] == -1):
+                self.move_forward()
+                return
 
         L_enemies = self.count_L_enemies()
         if L_enemies == 0:
