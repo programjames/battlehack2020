@@ -9,7 +9,7 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
-LOAD_FROM_FILE = True
+LOAD_FROM_FILE = False
 
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
@@ -53,12 +53,11 @@ class ProcessManager():
 
 if __name__ == "__main__":
 
-    keys = ["advanced", "back", "capture", "chains", "count", "filled",
+    keys = ["advanced", "back", "capture", "chains", "count", "enemy_promoted", "filled",
             "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
             "center", "distance_enemy", "distance_friendly", "finished", "left",
             "pawns"]
 
-    LOAD_FROM_FILE = True
     if  LOAD_FROM_FILE:
         epoch = 0
         while os.path.isfile(f"saved_weights/epoch{epoch}.json"):
