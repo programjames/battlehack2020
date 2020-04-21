@@ -12,6 +12,7 @@ class Overlord:
         self.board = [[0 if not x else 1 if x == self.team else -1 for x in row] for row in self.board]
         if self.team == Team.BLACK:
             self.board = self.board[::-1]
+        self.counts = self.get_counts()
 
     def spawn(self, col):
         if self.team == Team.WHITE:
@@ -38,52 +39,37 @@ class Overlord:
         return self.board[self.board_size-1][col] == 1
 
     def get_counts(self):
-        counts = []
-        for col in range(self.board_size):
-            counts.append(self.count_col(col, 1) - self.count_col(col, -1))
+        counts = [0 for _ in range(self.board_size)]
+        for row in range(self.board_size):
+            for col in range(self.board_size):
+                counts[col] = counts[col] + self.board[row][col]
         return counts
 
     def get_boundary(self):
         # Identify the bounding line between our pawns and theirs
-        my_boundary = []
-        for col in range(self.board_size):
-            for row in range(self.board_size)[::-1]:
-                if self.board[row][col] == 1:
-                    my_boundary.append(row)
-                    break
-            else:
-                my_boundary.append(-1)
-        
-        enemy_boundary = []
+        boundary = [-1 for _ in range(self.board_size)]
+        conv = {0: 0, 1: 0, -1: -self.board_size}
         for col in range(self.board_size):
             for row in range(self.board_size):
-                if self.board[row][col] == -1:
-                    enemy_boundary.append(row)
-                    break
-            else:
-                enemy_boundary.append(self.board_size)
-
-        boundary = [(my_boundary[i] + enemy_boundary[i]) // 2 for i in range(self.board_size)]
+                boundary[col] = boundary[col] + row * abs(self.board[row][col]) + conv[self.board[row][col]]
+        
         return boundary
 
     def identify_weak_spots(self):        
         weak_spots = {}
-
         for col in range(self.board_size):
-            enemies = self.count_pawns(0, col-1, self.board_size, col+2, -1)
-            friends = self.count_pawns(0, col-1, self.board_size, col+2, 1)
-            if enemies >= friends + 3:
-                weak_spots[col] = enemies - friends
-        
+            if self.counts[col] <= -3:
+                weak_spots[col] = -self.counts[col]
+
         boundary = self.get_boundary()
         for col in range(self.board_size):
             nearby_enemies = self.count_pawns(boundary[col]+1, col-1, boundary[col]+4, col+2, -1)
             nearby_friends = self.count_pawns(boundary[col]-2, col-1, boundary[col]+1, col+2, 1)
             if nearby_enemies > nearby_friends + 1:
                 weak_spots[col] = (nearby_enemies - nearby_friends) + 1000
-
+        
         for col in range(self.board_size):
-            if boundary[col] < 5:
+            if boundary[col] < -10:
                 weak_spots[col] = -boundary[col] + 1000000
 
         return weak_spots
@@ -130,13 +116,11 @@ class Overlord:
             if self.can_spawn(channel):
                 self.spawn(channel)
                 return
-
-        counts = self.get_counts()
-
+        
         min_count = self.board_size + 1
         min_col = None
         for col in range(0, self.board_size, 2):
-            count = counts[col]
+            count = self.counts[col]
             if (min_col is None or count < min_count) and self.can_spawn(col) and not self.is_finished(col):
                 min_col = col
                 min_count = count
@@ -148,7 +132,7 @@ class Overlord:
         min_count = self.board_size + 1
         min_col = None
         for col in range(1, self.board_size, 2):
-            count = counts[col]
+            count = self.counts[col]
             if (min_col is None or count < min_count) and self.can_spawn(col) and not self.is_finished(col):
                 min_col = col
                 min_count = count
@@ -156,7 +140,7 @@ class Overlord:
         if min_col is not None:
             self.spawn(min_col)
             return
-
+        
         for col in range(self.board_size):
             if self.can_spawn(col):
                 self.spawn(col)
