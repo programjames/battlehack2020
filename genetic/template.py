@@ -6,6 +6,7 @@ BACK_MULTIPLIER = {back_multiplier}
 CAPTURE_MULTIPLIER = {capture_multiplier}
 CHAINS_MULTIPLIER = {chains_multiplier}
 COUNT_MULTIPLIER = {count_multiplier}
+ENEMY_PROMOTED_MULTIPLIER = {enemy_promoted_multiplier}
 FILLED_MULTIPLIER = {filled_multiplier}
 HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
 PROMOTED_MULTIPLIER = {promoted_multiplier}
@@ -77,6 +78,14 @@ def count(board):
         for y in range(5):
             h += board[y][x]
     return h
+
+def enemy_promoted(e, row, team, board_size):
+    # +1 for each row we are up, multiplied by e, the number of enemy pawns we have seen promoted.
+    # +1 for how far the pawn has travelled.
+    if team == Team.WHITE:
+        return row * e
+    else:
+        return (board_size - row - 1) * e
 
 def filled(board):
     # +1 if the back pawns are all ours
@@ -197,6 +206,20 @@ def pawns(board, col, board_size):
             s += board[r][c]
     return s
 
+### PAWN GLOBALS ###
+enemies_promoted = set()
+
+### PAWN EXTRA FUNCTIONS ###
+def update_enemies_promoted(board, row, col, team, board_size):
+    if team == Team.BLACK:
+        row = board_size - 1 - row
+    if row > 2:
+        return
+    for i, r in enumerate(board[2-row]):
+        c = col + 2 - i
+        if r == -1 and c not in enemies_promoted:
+            enemies_promoted.append(c)
+
 ### HEURISTICS ###
 def pawn_heuristic(board, row, team, board_size, capture_):
     # Heuristic for how good a position is
@@ -207,6 +230,7 @@ def pawn_heuristic(board, row, team, board_size, capture_):
     h += CAPTURE_MULTIPLIER * capture_
     h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
+    h += ENEMY_PROMOTED_MULTIPLIER * enemy_promoted(len(enemies_promoted), row, team, board_size)
     h += FILLED_MULTIPLIER * filled(board)
     h += HORIZONTAL_MULTIPLIER * horizontal(board)
     h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
@@ -249,6 +273,8 @@ def pawn_turn():
     else:
         forward = -1
         board = board[::-1]
+
+    update_enemies_promoted(board, row, col, team, board_size)
     
     states = {"sit": (board, row, 0)}
 
