@@ -4,12 +4,14 @@ import os
 import time
 import multiprocessing
 import sys
+import math
 
 from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
-LOAD_FROM_FILE = True
+RANDOM_PIECES = 10
+LOAD_FROM_FILE = False
 
 def cross(weights1, weights2):
     return {key: (weights1[key] + weights2[key])/2 for key in weights1}
@@ -23,24 +25,29 @@ def random_weight(amount=10):
 def random_weights(keys, amount=10):
     return {key: random_weight(amount) for key in keys}
 
+def update_elo(e1, e2, r, k=10):
+    p1 = 1/(1+math.pow(10, (e1-e2)/400))
+    p2 = 1 - p1
+    return e1 + k*(r-p1), e2 + k*(p2-r)
+
 class ProcessManager():
     def __init__(self, robots=None):        
         self.games_finished = multiprocessing.Value('i', 0)
         if robots is not None:
-            self.wins = multiprocessing.Array('i', len(robots))
-            self.robots = robots
+            self.new_robots(robots)
 
     def new_robots(self, robots):
-        self.wins = multiprocessing.Array('i', len(robots))
+        self.elos = multiprocessing.Array('f', len(robots))
+        for i in range(len(self.elos)):
+            self.elos[i] = 1500
         self.games_finished.value = 0
         self.robots = robots
     
     def run_game(self, dir1, dir2, i, j):
-        winner = run_game(dir1, dir2, board_size=16, max_rounds=MAX_ROUNDS)
-        if winner == 0:
-            self.wins[i] += 1
-        else:
-            self.wins[j] += 1
+        result = run_game(dir1, dir2, board_size=16, max_rounds=MAX_ROUNDS, random_pieces=RANDOM_PIECES)
+        elo1, elo2 = self.elos[i], self.elos[j]
+        elo1, elo2 = update_elo(elo1, elo2, result)
+        self.elos[i], self.elos[j] = elo1, elo2
         self.games_finished.value += 1
 
     def print_progress(self):
@@ -56,10 +63,9 @@ class ProcessManager():
 
 if __name__ == "__main__":
 
-    keys = ["advanced", "back", "capture", "chains", "count", "enemy_promoted", "filled",
-            "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
-            "center", "distance_enemy", "distance_friendly", "finished", "left",
-            "pawns"]
+    keys = ["advanced", "back_filled", "capture", "count", "neighbors",
+            "support", "threats", "vertical", "center", "distance_enemy",
+            "distance_friendly", "finished", "pawns", "odd"]
 
     if  LOAD_FROM_FILE:
         epoch = 0
@@ -91,11 +97,11 @@ if __name__ == "__main__":
         for proc in processes:
             proc.join()
 
-        wins = pm.wins
+        elos = pm.elos
                 
         print()
-        wins, weightss = zip(*sorted(zip(wins, weightss), key=lambda x:x[0], reverse=True))
-
+        elos, weightss = zip(*sorted(zip(elos, weightss), key=lambda x:x[0], reverse=True))
+        
         with open(f"saved_weights/epoch{epoch}.json", "w") as f:
             f.write(json.dumps(weightss))
 

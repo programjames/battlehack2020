@@ -4,147 +4,106 @@ def max(a, b):
 def min(a, b):
     return a if a < b else b
 
-class Overlord:
-    def __init__(self):
-        self.board_size = get_board_size()
-        self.team = get_team()
-        self.board = get_board()
-        self.board = [[0 if not x else 1 if x == self.team else -1 for x in row] for row in self.board]
-        if self.team == Team.BLACK:
-            self.board = self.board[::-1]
-        self.counts = self.get_counts()
-
-    def spawn(self, col):
-        if self.team == Team.WHITE:
-            spawn(0, col)
+def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
+    # check space, except doesn't hit you with game errors
+    if r < 0 or c < 0 or c >= board_size or r >= board_size:
+        return 0
+    try:
+        team_there = check_space(r, c)
+        if team_there == False:
+            return 0
+        if team_there is team:
+            return 1
         else:
-            spawn(self.board_size - 1, col)
+            return -1
+    except:
+        return 0
 
-    def can_spawn(self, col):
-        return self.board[0][col] == 0
+CENTER_MULTIPLIER = 1.8046815
+DISTANCE_ENEMY_MULTIPLIER = 3.401718669
+DISTANCE_FRIENDLY_MULTIPLIER = -3.52584115
+FINISHED_MULTIPLIER = -2
+PAWNS_MULTIPLIER = 1.1707371322
+ODD_MULTIPLIER = -20
 
-    def count_pawns(self, bottom, left, top, right, team):
-        # Count the number of pawns of type team in the square
-        count = 0
-        for row in range(max(0, bottom), min(top, self.board_size)):
-            for col in range(max(0, left), min(right, self.board_size)):
-                if self.board[row][col] == team:
-                    count += 1
-        return count
+def center(col, board_size):
+    return abs(col - (board_size-1)/2)
 
-    def count_col(self, col, team=1):
-        return self.count_pawns(0, col, self.board_size, col+1, team)
+def distance_enemy(board, col, board_size):
+    for i in range(board_size):
+        if board[i][col] == -1:
+            return i
+    return board_size
 
-    def is_finished(self, col):
-        return self.board[self.board_size-1][col] == 1
+def distance_friendly(board, col, board_size):
+    for i in range(board_size):
+        if board[i][col] == 1:
+            return i
+    return board_size
 
-    def get_counts(self):
-        counts = [0 for _ in range(self.board_size)]
-        for row in range(self.board_size):
-            for col in range(self.board_size):
-                counts[col] = counts[col] + self.board[row][col]
-        return counts
+def finished(board, col, board_size):
+    return 1 if board[board_size-1][col] == 1 else 0
 
-    def get_boundary(self):
-        # Identify the bounding line between our pawns and theirs
-        boundary = [-1 for _ in range(self.board_size)]
-        conv = {0: 0, 1: 0, -1: -self.board_size}
-        for col in range(self.board_size):
-            for row in range(self.board_size):
-                boundary[col] = boundary[col] + row * abs(self.board[row][col]) + conv[self.board[row][col]]
-        
-        return boundary
+def odd(col):
+    return col % 2
 
-    def identify_weak_spots(self):        
-        weak_spots = {}
-        for col in range(self.board_size):
-            if self.counts[col] <= -3:
-                weak_spots[col] = -self.counts[col]
-
-        boundary = self.get_boundary()
-        for col in range(self.board_size):
-            nearby_enemies = self.count_pawns(boundary[col]+1, col-1, boundary[col]+4, col+2, -1)
-            nearby_friends = self.count_pawns(boundary[col]-2, col-1, boundary[col]+1, col+2, 1)
-            if nearby_enemies > nearby_friends + 1:
-                weak_spots[col] = (nearby_enemies - nearby_friends) + 1000
-        
-        for col in range(self.board_size):
-            if boundary[col] < -10:
-                weak_spots[col] = -boundary[col] + 1000000
-
-        return weak_spots
+def pawns(board, col, board_size):
+    if col == 0:
+        s = 0
+        for r in range(board_size):
+            for c in (col, col+1):
+                s += board[r][c]
+        return s
     
-    def find_channels(self):
-        starts = []
-        ends = []
-        for col in range(self.board_size):
-            start = self.board_size
-            count = 0
-            for row in range(self.board_size):
-                if self.board[row][col] == -1:
-                    break
-                if start == self.board_size and self.board[row][col] == 1:
-                    start = row
-                if start and self.board[row][col] != 1:
-                    break
-                if self.board[row][col] == 1:
-                    count += 1
-            starts.append(start)
-            ends.append(start + count)
+    if col == board_size - 1:
+        s = 0
+        for r in range(board_size):
+            for c in (col-1, col):
+                s += board[r][c]
+        return s
 
-        channels = []
-        for col in range(1, self.board_size - 1):
-            if self.count_col(col, 1) > 3:
-                continue
-            max_start = max(starts[col-1], starts[col+1])
-            min_end = min(ends[col-1], ends[col+1])
-            if min_end - max_start >= 4:
-                channels.append(col)
-        return channels
+    s = 0
+    for r in range(board_size):
+        for c in (col-1, col, col+1):
+            s += board[r][c]
+    return s
 
-    def do_turn(self):
-        weak_spots = self.identify_weak_spots()
-        if weak_spots:
-            weak_spots = sorted(weak_spots.keys(), key=lambda key: weak_spots[key], reverse=True)
-            for weak_spot in weak_spots:
-                if self.can_spawn(weak_spot):
-                    self.spawn(weak_spot)
-                    return
+def overlord_heuristic(board, col, board_size):
+    h = 0
+    h += CENTER_MULTIPLIER * center(col, board_size)
+    h += DISTANCE_ENEMY_MULTIPLIER * distance_enemy(board, col, board_size)
+    h += DISTANCE_FRIENDLY_MULTIPLIER * distance_friendly(board, col, board_size)
+    h += FINISHED_MULTIPLIER * finished(board, col, board_size)
+    h += ODD_MULTIPLIER * odd(col)
+    h += PAWNS_MULTIPLIER * pawns(board, col, board_size)
+    return h
 
-        channels = self.find_channels()
-        for channel in channels:
-            if self.can_spawn(channel):
-                self.spawn(channel)
-                return
+def overlord_turn():
+    board_size = get_board_size()
+    team = get_team()
+    opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
+
+    board = get_board()
+    board = [[0 if not x else (1 if x == team else -1) for x in row] for row in board]
+    if team == Team.WHITE:
+        index = 0
+    else:
+        index = board_size - 1
+        board = board[::-1]
+
+    best_h = -100000
+    best_col = None
+    for col in range(board_size):
+        if board[0][col] != 0:
+            continue
         
-        min_count = self.board_size + 1
-        min_col = None
-        for col in range(0, self.board_size, 2):
-            count = self.counts[col]
-            if (min_col is None or count < min_count) and self.can_spawn(col) and not self.is_finished(col):
-                min_col = col
-                min_count = count
+        h = overlord_heuristic(board, col, board_size)
+        if best_col is None or h < best_h:
+            best_col = col
+            best_h = h
 
-        if min_col is not None:
-            self.spawn(min_col)
-            return
-
-        min_count = self.board_size + 1
-        min_col = None
-        for col in range(1, self.board_size, 2):
-            count = self.counts[col]
-            if (min_col is None or count < min_count) and self.can_spawn(col) and not self.is_finished(col):
-                min_col = col
-                min_count = count
-
-        if min_col is not None:
-            self.spawn(min_col)
-            return
-        
-        for col in range(self.board_size):
-            if self.can_spawn(col):
-                self.spawn(col)
-                return
+    if best_col is not None:
+        spawn(index, best_col)
 
 class Pawn:
     def __init__(self):
@@ -196,12 +155,12 @@ class Pawn:
         return True
 
     def get_threats(self):
-        threats = []
-        if self.board[3][1] == -1:
-            threats.append(-1)
-        if self.board[3][3] == -1:
-            threats.append(1)
+        threats = [i for i in (-1, 1) if self.board[3][2+i] == -1]
         return threats
+
+    def get_supporting(self):
+        supporting = [i for i in (-1, 1) if self.board[3][2+i] == 1]
+        return supporting
 
     def count_corner_enemies(self):
         return (1 if self.board[4][0] == -1 else 0) + (1 if self.board[4][4] == -1 else 0)
@@ -209,8 +168,18 @@ class Pawn:
     def count_L_enemies(self):
         return (1 if self.board[4][1] == -1 else 0) + (1 if self.board[4][3] == -1 else 0)
 
+    def get_L2_enemies(self):
+        return [i for i in (-1, 1) if self.board[3][2+2*i] == -1]
+    
     def count_side_enemies(self):
         return (1 if self.board[2][1] == -1 else 0) + (1 if self.board[2][3] == -1 else 0)
+
+    def get_supports(self):
+        return [i for i in (-1, 1) if self.board[1][2+i] == 1]
+    
+    def get_side_friends(self):
+        side_friends = [i for i in (-1, 1) if self.board[2][2+2*i] == 1]
+        return side_friends
     
     def must_support_corners(self):
         if self.board[4][0] == -1 and self.board[3][1] == 1:
@@ -219,8 +188,8 @@ class Pawn:
             return True
         return False
 
-    def neighbors_filled(self):
-        return self.board[2][1] == 1 and self.board[2][3] == 1
+    def get_neighbors(self):
+        return [i for i in (-1, 1) if self.board[2][2+i] == 1]
 
     def back_filled(self):
         for row in (0, 1, 2):
@@ -237,10 +206,22 @@ class Pawn:
             return
         
         threats = self.get_threats()
-        if len(threats) > 0:
-            self.capture(threats[0])
-            return
+        if len(threats) > 0:                
+            side_friends = self.get_side_friends()
+            if len(threats) == 2:
+                if len(side_friends) == 1:
+                    self.capture(side_friends[0])
+                    return
+                self.capture(threats[0])
+                return
 
+            
+            supports = self.get_supports()
+
+            if len(supports) != 2 or threats[0] in side_friends or self.board[3][2] != -1:
+                self.capture(threats[0])
+                return
+            
         if self.empty_ahead():
             self.move_forward()
             return
@@ -252,19 +233,18 @@ class Pawn:
                 return
 
         L_enemies = self.count_L_enemies()
+        neighbors = self.get_neighbors()
+        L2_enemies = self.get_L2_enemies()
+        
         if L_enemies == 0:
             self.move_forward()
             return
-        if L_enemies == 1 and self.neighbors_filled():
+        if L_enemies == 1 and len(neighbors) == 2 and len(L2_enemies) == 0:
             self.move_forward()
             return
-        if L_enemies == 2 and self.back_filled():
+        if L_enemies <= 2 and self.back_filled():
             self.move_forward()
-            return    
-
-def overlord_turn():
-    overlord = Overlord()
-    overlord.do_turn()
+            return
 
 def pawn_turn():
     pawn = Pawn()
