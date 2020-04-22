@@ -9,19 +9,23 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
+SHAPE = [27, 16, 16, 4]
 LOAD_FROM_FILE = True
 
 def cross(weights1, weights2):
-    return {key: (weights1[key] + weights2[key])/2 for key in weights1}
+    return {key: [(weights1[key][i] + weights2[key][i])/2 for i in range(len(weights1[key]))] for key in weights1 if key in weights2}
 
 def mutate(weights, amount=1):
-    return {key: weight + random.random() * 2 * amount - amount for key, weight in weights.items()}
+    return {key: [w + random.random() * 2 * amount - amount for w in ws] for key, ws in weights.items()}
 
 def random_weight(amount=10):
     return random.random() * 2 * amount - amount
 
-def random_weights(keys, amount=10):
-    return {key: random_weight(amount) for key in keys}
+def random_weights(num, amount=10):
+    return [random_weight(amount) for i in range(num)]
+
+def random_dict_weights(keys, amount=10):
+    return {key: random_weights(keys[key], amount) for key in keys}
 
 class ProcessManager():
     def __init__(self, robots=None):        
@@ -56,10 +60,10 @@ class ProcessManager():
 
 if __name__ == "__main__":
 
-    keys = ["advanced", "back", "capture", "chains", "count", "enemy_promoted", "filled",
-            "horizontal", "promoted", "stalemate", "threats", "vertical", "wedges",
-            "center", "distance_enemy", "distance_friendly", "finished", "left",
-            "pawns"]
+    num_weights = sum(SHAPE[i]*SHAPE[i+1] for i in range(len(SHAPE) - 1))
+    num_biases = sum(SHAPE[i+1] for i in range(len(SHAPE) - 1))
+    keys = {"weight_list": num_weights,
+            "biases_list": num_biases}
 
     if  LOAD_FROM_FILE:
         epoch = 0
@@ -70,9 +74,9 @@ if __name__ == "__main__":
             for weights in weightss:
                 for key in keys:
                     if key not in weights:
-                        weights[key] = random_weight()
+                        weights[key] = random_weights(keys[key])
     else:
-        weightss = [random_weights(keys) for i in range(32)]
+        weightss = [random_dict_weights(keys) for i in range(32)]
         epoch = 0
 
     pm = ProcessManager()    
@@ -109,7 +113,7 @@ if __name__ == "__main__":
                     )
                 )
         for i in range(8):
-            new_weightss.append(random_weights(keys))
+            new_weightss.append(random_dict_weights(keys))
         weightss = new_weightss
 
         with open(f"saved_weights/epoch{epoch}.json", "w") as f:

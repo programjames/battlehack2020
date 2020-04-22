@@ -22,7 +22,7 @@ if __name__ == "__main__":
     c1 = CodeContainer.from_directory(p1)
     c2 = CodeContainer.from_directory(p2)
 
-    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=False, seed=None)
+    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=True, seed=None)
     start = time.time()
     while game.running:
         print('.', end='', flush=True)

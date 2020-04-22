@@ -9,7 +9,7 @@ class Robot:
             self.code = f.read()
         
         for key, val in multipliers.items():
-            self.code = self.code.replace(f"{{{key}_multiplier}}", str(val))
+            self.code = self.code.replace("{" + f"{key}" + "}", str(val))
         if not os.path.isdir(self.bot_directory):
             os.mkdir(self.bot_directory)
         with open(self.file, 'w') as f:

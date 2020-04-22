@@ -1,4 +1,5 @@
-genetic/robots/
-genetic/saved_weights/
+
+*/robots/
+*/saved_weights/
 battlehack20-scaffold/
 *.pyc
