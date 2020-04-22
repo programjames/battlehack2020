@@ -2,30 +2,21 @@ import random
 
 ### PAWN WEIGHTS ###
 ADVANCED_MULTIPLIER = {advanced_multiplier}
-BACK_MULTIPLIER = {back_multiplier}
+BACK_FILLED_MULTIPLIER = {back_filled_multiplier}
 CAPTURE_MULTIPLIER = {capture_multiplier}
-CHAINS_MULTIPLIER = {chains_multiplier}
 COUNT_MULTIPLIER = {count_multiplier}
-ENEMY_PROMOTED_MULTIPLIER = {enemy_promoted_multiplier}
-FILLED_MULTIPLIER = {filled_multiplier}
-HORIZONTAL_MULTIPLIER = {horizontal_multiplier}
-PROMOTED_MULTIPLIER = {promoted_multiplier}
-STALEMATE_MULTIPLIER = {stalemate_multiplier}
+NEIGHBORS_MULTIPLIER = {neighbors_multiplier}
+SUPPORT_MULTIPLIER = {support_multiplier}
 THREATS_MULTIPLIER = {threats_multiplier}
 VERTICAL_MULTIPLIER = {vertical_multiplier}
-WEDGES_MULTIPLIER = {wedges_multiplier}
 
 ### OVERLORD WEIGHTS ###
 CENTER_MULTIPLIER = {center_multiplier}
 DISTANCE_ENEMY_MULTIPLIER = {distance_enemy_multiplier}
 DISTANCE_FRIENDLY_MULTIPLIER = {distance_friendly_multiplier}
 FINISHED_MULTIPLIER = {finished_multiplier}
-LEFT_MULTIPLIER = {left_multiplier}
 PAWNS_MULTIPLIER = {pawns_multiplier}
-
-
-GAME_END = 500
-
+ODD_MULTIPLIER = {odd_multiplier}
 
 def check_space_wrapper(r, c, board_size, team=Team.WHITE, opp_team=Team.BLACK):
     # check space, except doesn't hit you with game errors
@@ -47,56 +38,24 @@ def advanced(row, team, board_size):
     if team == Team.WHITE:
         return row
     else:
-        return board_size - row - 1
+        return (board_size - row - 1)
 
-def back(row, team, board_size):
-    if team == Team.WHITE:
-        return 1 if row == 0 else 0
-    else:
-        return 1 if row == board_size - 1 else 0
-
-def chains(board):
-    # +1 for each pawn in one of our chains, -1 for each pawn in enemy chain
-    h = 0
-    for x in range(4):
-        for y in range(4):
-            if board[y][x] == board[y+1][x+1] == 1:
-                h += 1
-            if board[y][x+1] == board[y+1][x] == 1:
-                h += 1
-            if board[y][x] == board[y+1][x+1] == -1:
-                h -= 1
-            if board[y][x+1] == board[y+1][x] == -1:
-                h -= 1
-    return h
+def back_filled(board):
+    for x in (1, 2, 3):
+        for y in (0, 1, 2):
+            if board[y][x] != 1:
+                return 0
+    return 1
 
 def count(board):
     # +1 for each of our pawns, -1 for each enemy pawn
-    # sum() is not defined
     h = 0
     for x in range(5):
         for y in range(5):
             h += board[y][x]
     return h
 
-def enemy_promoted(e, row, team, board_size):
-    # +1 for each row we are up, multiplied by e, the number of enemy pawns we have seen promoted.
-    # +1 for how far the pawn has travelled.
-    if team == Team.WHITE:
-        return row * e
-    else:
-        return (board_size - row - 1) * e
-
-def filled(board):
-    # +1 if the back pawns are all ours
-    h = 0
-    for r in (1, 2):
-        for c in (1, 2, 3):
-            if board[r][c] != 1:
-                return 0
-    return 1
-
-def horizontal(board):
+def neighbors(board):
     # +1 for each pair of adjacent pawns horizontally, -1 for enemy pawns in such a configuration
     h = 0
     for x in range(4):
@@ -107,31 +66,8 @@ def horizontal(board):
                 h -= 1
     return h
 
-def offense(row, team, board_size, turn):
-    # +turn for how far the pawn has travelled.
-    if team == Team.WHITE:
-        return row * turn
-    else:
-        return (board_size - row - 1) * turn
-
-def promoted(row, team, board_size):
-    if team == Team.WHITE:
-        return 1 if row == board_size - 1 else 0
-    else:
-        return 1 if row == 0 else 0
-
-def stalemate(board):
-    for r, c in ((3, 1), (3, 3), (2, 2)):
-        if board[r][c] != 1:
-            return 0
-    for r, c in ((4, 1), (4, 3)):
-        if board[r][c] != -1:
-            return 0
-    return 1
-
 def threats(board):
-    # +1 for each of our pawns that can get captured
-    # Note: double threats counted twice
+    # +1 for each threat we have
     h = 0
     for x in range(4):
         for y in range(4):
@@ -141,26 +77,25 @@ def threats(board):
                 h += 1
     return h
 
+
+def support(board):
+    # +1 for each pawn supporting another, -1 for each enemy pawn doing so
+    h = 0
+    for x in range(4):
+        for y in range(4):
+            if board[y][x] == board[y+1][x+1]:
+                h += board[y][x]
+            if board[y+1][x] == board[y][x+1]:
+                h += board[y+1][x]
+    return h
+
 def vertical(board):
-    # +1 for each of our pawns adjacent vertically, -1 for enemy pawns in such a configuration
+    # +1 for each pawn in front of another
     h = 0
     for x in range(5):
         for y in range(4):
-            if board[y][x] == board[y+1][x] == 1:
-                h += 1
-            if board[y][x] == board[y+1][x] == -1:
-                h -= 1
-    return h
-
-def wedges(board):
-    # +1 for each pawn in a wedge, -1 for each enemy pawn in a wedge
-    h = 0
-    for x in range(1, 4):
-        for y in range(4):
-            if board[y][x-1] == board[y+1][x] == board[y][x+1] == 1:
-                h += 1
-            if board[y+1][x-1] == board[y][x] == board[y+1][x+1] == -1:
-                h -= 1
+            if board[y][x] == board[y+1][x]:
+                h += board[y][x]
     return h
 
 ### OVERLORD METHODS ###
@@ -182,8 +117,8 @@ def distance_friendly(board, col, board_size):
 def finished(board, col, board_size):
     return 1 if board[board_size-1][col] == 1 else 0
 
-def left(col, board_size):
-    return 1 if col < board_size / 2 else 0
+def odd(col):
+    return col % 2
 
 def pawns(board, col, board_size):
     if col == 0:
@@ -206,38 +141,19 @@ def pawns(board, col, board_size):
             s += board[r][c]
     return s
 
-### PAWN GLOBALS ###
-enemies_promoted = set()
-
-### PAWN EXTRA FUNCTIONS ###
-def update_enemies_promoted(board, row, col, team, board_size):
-    if team == Team.BLACK:
-        row = board_size - 1 - row
-    if row > 2:
-        return
-    for i, r in enumerate(board[2-row]):
-        c = col + 2 - i
-        if r == -1 and c not in enemies_promoted:
-            enemies_promoted.append(c)
-
 ### HEURISTICS ###
 def pawn_heuristic(board, row, team, board_size, capture_):
     # Heuristic for how good a position is
     
     h = 0
     h += ADVANCED_MULTIPLIER * advanced(row, team, board_size)
-    h += BACK_MULTIPLIER * back(row, team, board_size)
+    h += BACK_FILLED_MULTIPLIER * back_filled(board)
     h += CAPTURE_MULTIPLIER * capture_
-    h += CHAINS_MULTIPLIER * chains(board)
     h += COUNT_MULTIPLIER * count(board)
-    h += ENEMY_PROMOTED_MULTIPLIER * enemy_promoted(len(enemies_promoted), row, team, board_size)
-    h += FILLED_MULTIPLIER * filled(board)
-    h += HORIZONTAL_MULTIPLIER * horizontal(board)
-    h += PROMOTED_MULTIPLIER * promoted(row, team, board_size)
-    h += STALEMATE_MULTIPLIER * stalemate(board)
+    h += NEIGHBORS_MULTIPLIER * neighbors(board)
     h += THREATS_MULTIPLIER * threats(board)
+    h += SUPPORT_MULTIPLIER * support(board)
     h += VERTICAL_MULTIPLIER * vertical(board)
-    h += WEDGES_MULTIPLIER * wedges(board)
     return h
 
 def overlord_heuristic(board, col, board_size):
@@ -246,7 +162,7 @@ def overlord_heuristic(board, col, board_size):
     h += DISTANCE_ENEMY_MULTIPLIER * distance_enemy(board, col, board_size)
     h += DISTANCE_FRIENDLY_MULTIPLIER * distance_friendly(board, col, board_size)
     h += FINISHED_MULTIPLIER * finished(board, col, board_size)
-    h += LEFT_MULTIPLIER * left(col, board_size)
+    h += ODD_MULTIPLIER * odd(col)
     h += PAWNS_MULTIPLIER * pawns(board, col, board_size)
     return h
     
@@ -255,7 +171,6 @@ def copy(board):
     return [row.copy() for row in board]
 
 def pawn_turn():
-    log(f"MY STALEMATE MULTIPLIER = {STALEMATE_MULTIPLIER}")
     board_size = get_board_size()
     team = get_team()
     opp_team = Team.WHITE if team == Team.BLACK else team.BLACK
@@ -273,23 +188,13 @@ def pawn_turn():
     else:
         forward = -1
         board = board[::-1]
-
-    update_enemies_promoted(board, row, col, team, board_size)
     
     states = {"sit": (board, row, 0)}
-
-
-    if stalemate(board):
-        log("stalemate sit")
 
     if board[3][2] == 0:
         new_state = copy(board)
         new_state[3][2] = 1
         new_state[2][2] = 0
-        if stalemate(new_state):
-            log("stalemate forward")
-        else:
-            log("Not stalemate forward")
         states["forward"] = (new_state, row + forward, 0)
     
     if board[3][1] == -1:
