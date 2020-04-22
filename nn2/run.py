@@ -1,10 +1,10 @@
 from battlehack20 import CodeContainer, Game
 import time
 
-def run_game(dir1, dir2, board_size=16, max_rounds=250, debug=False):
+def run_game(dir1, dir2, board_size=16, max_rounds=250, random_pieces=0, debug=False):
     c1 = CodeContainer.from_directory(dir1)
     c2 = CodeContainer.from_directory(dir2)
-    game = Game([c1, c2], board_size=board_size, max_rounds=max_rounds, debug=debug, seed=None)
+    game = Game([c1, c2], board_size=board_size, max_rounds=max_rounds, random_pieces=random_pieces, debug=debug, seed=None)
     while game.running:
         game.turn()
     return game.get_score()
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
-    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=True, seed=None)
+    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, random_pieces=0, debug=True, seed=None)
 
     start = time.time()
     while game.running:

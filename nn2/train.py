@@ -12,6 +12,7 @@ from run import run_game
 MAX_ROUNDS = 500
 SHAPE = [27, 8, 8, 4]
 LOAD_FROM_FILE = True
+RANDOM_PIECES = 10
 
 def cross(weights1, weights2):
     return {key: [(weights1[key][i] + weights2[key][i])/2 for i in range(len(weights1[key]))] for key in weights1 if key in weights2}
@@ -48,7 +49,7 @@ class ProcessManager():
         self.robots = robots
     
     def run_game(self, dir1, dir2, i, j):
-        result = run_game(dir1, dir2, board_size=16, max_rounds=MAX_ROUNDS)
+        result = run_game(dir1, dir2, board_size=16, max_rounds=MAX_ROUNDS, random_pieces=RANDOM_PIECES)
         elo1, elo2 = self.elos[i], self.elos[j]
         elo1, elo2 = update_elo(elo1, elo2, result)
         self.elos[i], self.elos[j] = elo1, elo2
@@ -90,7 +91,7 @@ if __name__ == "__main__":
     proc.start()
     
     while epoch < 1000:
-        mutant_variance = 2**((120-epoch)/30)
+        mutant_variance = 2**((165-epoch)/30)
         start = time.time()
         robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
         pm.new_robots(robots)
