@@ -1,4 +1,6 @@
 *.zip
+nn3/saved_weights/
+nn3/robots/
 nn2/robots/
 nn2/saved_weights/
 nn/robots/
