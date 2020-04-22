@@ -1,20 +1,20 @@
 from battlehack20 import CodeContainer, Game
 import time
 
-def run_game(dir1, dir2, board_size=16, max_rounds=250, debug=False, random_pieces=0):
+def run_game(dir1, dir2, board_size=16, max_rounds=250, debug=False):
     c1 = CodeContainer.from_directory(dir1)
     c2 = CodeContainer.from_directory(dir2)
-    game = Game([c1, c2], board_size=board_size, max_rounds=max_rounds, debug=debug, seed=None, random_pieces=random_pieces)
+    game = Game([c1, c2], board_size=board_size, max_rounds=max_rounds, debug=debug, seed=None)
     while game.running:
         game.turn()
-    return game.get_score()
+    return game.winner.value
 
 if __name__ == "__main__":
     import os, sys, json, time
     from fancyviewer import FancyViewer
     from robot import Robot
 
-    MAX_ROUNDS = 1500
+    MAX_ROUNDS = 500
 
     epoch1 = sys.argv[1]
     bot1 = 0
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     c1 = CodeContainer.from_directory(r1.bot_directory)
     c2 = CodeContainer.from_directory(r2.bot_directory)
 
-    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=True, seed=None, random_pieces=10)
+    game = Game([c1, c2], board_size=16, max_rounds=MAX_ROUNDS, debug=True, seed=None)
 
     start = time.time()
     while game.running:
