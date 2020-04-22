@@ -58,8 +58,7 @@ class ProcessManager():
         p.start()
         return p
 
-if __name__ == "__main__":
-
+if __name__ == "__main__":    
     num_weights = sum(SHAPE[i]*SHAPE[i+1] for i in range(len(SHAPE) - 1))
     num_biases = sum(SHAPE[i+1] for i in range(len(SHAPE) - 1))
     keys = {"weight_list": num_weights,
@@ -84,6 +83,7 @@ if __name__ == "__main__":
     proc.start()
     
     while epoch < 1000:
+        mutant_variance = 2**((120-epoch)/20)
         start = time.time()
         robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
         pm.new_robots(robots)
@@ -109,7 +109,8 @@ if __name__ == "__main__":
                 mutate(
                     cross(
                         random.choice(weightss[:8]),
-                        random.choice(weightss[:8]))
+                        random.choice(weightss[:8]),),
+                    mutant_variance
                     )
                 )
         for i in range(8):
