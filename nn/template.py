@@ -3,7 +3,7 @@ import math
 
 WEIGHT_LIST = {weight_list}
 BIASES_LIST = {biases_list}
-SHAPE = [27, 16, 16, 4]
+SHAPE = [27, 16, 10, 2]
 
 IN_TRAINING = True
 
@@ -51,7 +51,7 @@ else:
                 v = sigmoid_list(v)
             return v
 
-def list_to_weights(lis, shape=[27, 16, 16, 4]):
+def list_to_weights(lis, shape=[27, 16, 10, 2]):
     weights = []
     index = 0
     for i in range(len(shape) - 1):
@@ -63,7 +63,7 @@ def list_to_weights(lis, shape=[27, 16, 16, 4]):
         weights.append(row)
     return weights
 
-def list_to_biases(lis, shape=[27, 16, 16, 4]):
+def list_to_biases(lis, shape=[27, 16, 10, 2]):
     biases = []
     index = 0
     for i in shape[1:]:
@@ -130,20 +130,17 @@ def pawn_turn():
             val = v
             best_move = i
 
-    if best_move == 0:
-        return
-    elif best_move == 1:
+    if best_move == 1:
         if board[3][2] == 0:
             move_forward()
         return
-    elif best_move == 2:
-        if board[3][1] == -1:
-            capture(row + forward, col - 1)
+    if board[3][1] == -1:
+        capture(row + forward, col - 1)
         return
-    elif best_move == 3:
-        if board[3][3] == -1:
-            capture(row + forward, col + 1)
+    if board[3][3] == -1:
+        capture(row + forward, col + 1)
         return
+    return
 
 def overlord_turn():
     board_size = get_board_size()

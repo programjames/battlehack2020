@@ -9,7 +9,7 @@ from robot import Robot
 from run import run_game
 
 MAX_ROUNDS = 500
-SHAPE = [27, 16, 16, 4]
+SHAPE = [27, 16, 10, 2]
 LOAD_FROM_FILE = True
 
 def cross(weights1, weights2):
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     proc.start()
     
     while epoch < 1000:
-        mutant_variance = 2**((120-epoch)/20)
+        mutant_variance = 2**(-epoch/10)
         start = time.time()
         robots = [Robot(f"bot{i}", weights) for i, weights in enumerate(weightss)]
         pm.new_robots(robots)
