@@ -7,10 +7,15 @@ This contains the heuristic-based genetic algorithm, and for some reason the cus
 
 ### Overlord Heuristics:
 **Center** - How far away is this column from the center of the board?
+
 **Distance Enemy** - How close to being promoted is the nearest enemy in this column?
+
 **Distance Friendly** - How close to the spawn point is the nearest friend in this column?
+
 **Finished** - Did we promote a pawn on this column?
+
 **Odd** - Is this column an odd number column? (Useful to make "pillars" of pawns alternating columns.)
+
 **Pawns** - How many pawns are there in this column and the two neighboring ones? Add one for a friend,
 and subtract one for an enemy.
 
