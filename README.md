@@ -1,7 +1,22 @@
 # Battlehack 2020
 ## By D5: programjames & cooljoseph
 
-Here's the code for the genetic algorithm you've all been waiting for. Lots of duplicated files, because lots of changes in the last day of Battlehack and we didn't want to break anything.
+## Installation
+You need to install Python 3. Probably any version will work fine, but if you want to be safe install Python 3.7. Once you have Python,
+run the following commands:
+```
+pip install battlehack20-minimal
+pip install battlehack20-fancyviewer
+```
+Note: if you have already installed the official battlehack20 engine, then you need to first uninstall it before running the above
+commands:
+```
+pip uninstall battlehack20
+```
+
+## Overview
+
+Here's the code for the genetic algorithm you've all been waiting for. Lots of duplicated files, because we made lots of changes in the last day of Battlehack and we didn't want to break anything.
 A quick rundown of the repo and different things we did:
 
 1. `genetic/bh20min/`
@@ -68,3 +83,7 @@ Name? <save-folder>
 ready.py
 Name? <Name of folder with bot.py>
 ```
+
+## Pictures?
+Sorry, no pretty graphs or pictures. But if you install this repo you can run some games yourself and see your neural network getting
+trained!
