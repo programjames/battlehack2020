@@ -1,4 +1,4 @@
-# Battlehack 2020
+# MIT Battlehack 2020
 ## By D5: programjames & cooljoseph
 
 ## Installation
@@ -15,8 +15,9 @@ pip uninstall battlehack20
 ```
 
 ## Overview
+The game is a simplified version of chess, were the only goal is to create passed pawns. You can see what the game looks like on [YouTube](https://youtu.be/wS0TO_QtgmI). We used a neural net (trained through a genetic algorithm).
 
-Here's the code for the genetic algorithm you've all been waiting for. Lots of duplicated files, because we made lots of changes in the last day of Battlehack and we didn't want to break anything.
+There's lots of duplicated files in this repo, because we made lots of changes in the last day of Battlehack (plus it was only a few days long) and we didn't want to break anything.
 A quick rundown of the repo and different things we did:
 
 1. `genetic/bh20min/`
